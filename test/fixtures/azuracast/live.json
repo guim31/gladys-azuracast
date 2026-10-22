@@ -1,0 +1,225 @@
+[
+  {
+    "station": {
+      "id": 3,
+      "name": "AzuraTest Radio",
+      "shortcode": "azuratest_radio",
+      "description": "A test radio station.",
+      "frontend": "icecast",
+      "backend": "liquidsoap",
+      "timezone": "UTC",
+      "listen_url": "http://192.0.2.10/listen/azuratest_radio/radio.mp3",
+      "url": null,
+      "public_player_url": "http://192.0.2.10/public/azuratest_radio",
+      "playlist_pls_url": "http://192.0.2.10/public/azuratest_radio/playlist.pls",
+      "playlist_m3u_url": "http://192.0.2.10/public/azuratest_radio/playlist.m3u",
+      "is_public": true,
+      "requests_enabled": true,
+      "mounts": [
+        {
+          "id": 3,
+          "name": "/radio.mp3 (128kbps MP3)",
+          "url": "http://192.0.2.10/listen/azuratest_radio/radio.mp3",
+          "bitrate": 128,
+          "format": "mp3",
+          "listeners": {
+            "total": 2,
+            "unique": 1,
+            "current": 2
+          },
+          "path": "/radio.mp3",
+          "is_default": true
+        },
+        {
+          "id": 4,
+          "name": "/mobile.mp3 (64kbps MP3)",
+          "url": "http://192.0.2.10/listen/azuratest_radio/mobile.mp3",
+          "bitrate": 64,
+          "format": "mp3",
+          "listeners": {
+            "total": 2,
+            "unique": 2,
+            "current": 2
+          },
+          "path": "/mobile.mp3",
+          "is_default": false
+        }
+      ],
+      "remotes": [],
+      "hls_enabled": true,
+      "hls_is_default": false,
+      "hls_url": "http://192.0.2.10/hls/azuratest_radio/live.m3u8",
+      "hls_listeners": 0
+    },
+    "listeners": {
+      "total": 4,
+      "unique": 3,
+      "current": 4
+    },
+    "live": {
+      "is_live": true,
+      "streamer_name": "DJ Gladys",
+      "broadcast_start": 1792685824,
+      "art": null
+    },
+    "now_playing": {
+      "sh_id": 7,
+      "played_at": 1792685815,
+      "duration": 240,
+      "playlist": "default",
+      "playlist_chain": null,
+      "playlist_source": "songs",
+      "streamer": "",
+      "is_request": false,
+      "song": {
+        "id": "4df536f33ebea14cd3c3f8891fc3bf67",
+        "art": "http://192.0.2.10/api/station/azuratest_radio/art/18c8a11b6d4be07262d8948f",
+        "custom_fields": [],
+        "text": "Test Artist 4 - Gladys Test Album - Long Tone 4",
+        "artist": "Test Artist 4",
+        "title": "Long Tone 4",
+        "album": "Gladys Test Album",
+        "genre": "",
+        "isrc": "",
+        "lyrics": ""
+      },
+      "elapsed": 32,
+      "remaining": 208
+    },
+    "playing_next": {
+      "cued_at": 1792685809,
+      "played_at": 1792686047,
+      "duration": 240.01318860808,
+      "playlist": "default",
+      "playlist_chain": null,
+      "playlist_source": "songs",
+      "is_request": false,
+      "song": {
+        "id": "2d558384495bcfdf8108d9c1d38e94ca",
+        "art": "http://192.0.2.10/api/station/azuratest_radio/art/179df0272213ca85ddf39107",
+        "custom_fields": [],
+        "text": "Test Artist 5 - Gladys Test Album - Long Tone 5",
+        "artist": "Test Artist 5",
+        "title": "Long Tone 5",
+        "album": "Gladys Test Album",
+        "genre": "",
+        "isrc": "",
+        "lyrics": ""
+      }
+    },
+    "song_history": [
+      {
+        "sh_id": 6,
+        "played_at": 1792685799,
+        "duration": 40,
+        "playlist": "default",
+        "playlist_chain": null,
+        "playlist_source": "songs",
+        "streamer": "",
+        "is_request": false,
+        "song": {
+          "id": "4ef62c25d9e6d68a19472a8599b7a18f",
+          "art": "http://192.0.2.10/api/station/azuratest_radio/art/20eba2e4ce0358b83400ecd7-1792684963.jpg",
+          "custom_fields": [],
+          "text": "Test Artist 1 - Gladys Test Album - Sine Wave 1",
+          "artist": "Test Artist 1",
+          "title": "Sine Wave 1",
+          "album": "Gladys Test Album",
+          "genre": "",
+          "isrc": "",
+          "lyrics": ""
+        }
+      },
+      {
+        "sh_id": 5,
+        "played_at": 1792685562,
+        "duration": 240,
+        "playlist": "default",
+        "playlist_chain": null,
+        "playlist_source": "songs",
+        "streamer": "",
+        "is_request": false,
+        "song": {
+          "id": "2d558384495bcfdf8108d9c1d38e94ca",
+          "art": "http://192.0.2.10/api/station/azuratest_radio/art/179df0272213ca85ddf39107",
+          "custom_fields": [],
+          "text": "Test Artist 5 - Gladys Test Album - Long Tone 5",
+          "artist": "Test Artist 5",
+          "title": "Long Tone 5",
+          "album": "Gladys Test Album",
+          "genre": "",
+          "isrc": "",
+          "lyrics": ""
+        }
+      },
+      {
+        "sh_id": 4,
+        "played_at": 1792685509,
+        "duration": 240,
+        "playlist": "default",
+        "playlist_chain": null,
+        "playlist_source": "songs",
+        "streamer": "",
+        "is_request": false,
+        "song": {
+          "id": "4df536f33ebea14cd3c3f8891fc3bf67",
+          "art": "http://192.0.2.10/api/station/azuratest_radio/art/18c8a11b6d4be07262d8948f",
+          "custom_fields": [],
+          "text": "Test Artist 4 - Gladys Test Album - Long Tone 4",
+          "artist": "Test Artist 4",
+          "title": "Long Tone 4",
+          "album": "Gladys Test Album",
+          "genre": "",
+          "isrc": "",
+          "lyrics": ""
+        }
+      },
+      {
+        "sh_id": 3,
+        "played_at": 1792685281,
+        "duration": 40,
+        "playlist": "default",
+        "playlist_chain": null,
+        "playlist_source": "songs",
+        "streamer": "",
+        "is_request": false,
+        "song": {
+          "id": "b5aea7d1913155a81de0b580c7325448",
+          "art": "http://192.0.2.10/api/station/azuratest_radio/art/3f20b1d01ee4c6ff6cb45997",
+          "custom_fields": [],
+          "text": "Test Artist 2 - Gladys Test Album - Sine Wave 2",
+          "artist": "Test Artist 2",
+          "title": "Sine Wave 2",
+          "album": "Gladys Test Album",
+          "genre": "",
+          "isrc": "",
+          "lyrics": ""
+        }
+      },
+      {
+        "sh_id": 2,
+        "played_at": 1792685244,
+        "duration": 40,
+        "playlist": "default",
+        "playlist_chain": null,
+        "playlist_source": "songs",
+        "streamer": "",
+        "is_request": false,
+        "song": {
+          "id": "3bd1851ab81cbd75e3267f3b53c29990",
+          "art": "http://192.0.2.10/api/station/azuratest_radio/art/f01f33fc1edf6b0d23db8577",
+          "custom_fields": [],
+          "text": "Test Artist 3 - Gladys Test Album - Sine Wave 3",
+          "artist": "Test Artist 3",
+          "title": "Sine Wave 3",
+          "album": "Gladys Test Album",
+          "genre": "",
+          "isrc": "",
+          "lyrics": ""
+        }
+      }
+    ],
+    "is_online": true,
+    "cache": null
+  }
+]

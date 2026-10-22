@@ -1,61 +1,147 @@
-# Demo Devices Template
+# AzuraCast
 
-This is the user documentation of the integration. Gladys re-hosts this file
-and shows a permanent **Documentation** link to it in the Configuration screen
-(in the user's language, with English as the fallback) — it is when
-configuring that the user needs it most. Keep the short onboarding hints in
-the `section` blocks of the manifest `config_schema`; put the long
-step-by-step (screenshots, troubleshooting…) here.
+[AzuraCast](https://www.azuracast.com) is a self-hosted web radio: an AutoDJ
+that plays your playlists, live shows by your streamers, and a public page for
+your listeners. This integration brings your stations into Gladys: what plays
+now, the number of listeners, whether a streamer is live, and scenes that react
+to a new song, a live show that starts or ends, an audience threshold or a
+station that goes off air. Scenes can also skip to the next song.
 
-## What you get
+AzuraCast can run at home or on a rented server: the integration works with
+both (the device badge says "local" or "cloud" from the address).
 
-Six demo devices show up after installation: a weather station (real data
-from Open-Meteo), a switch, a dimmable light, a smart plug with power
-metering, a motion sensor and a camera.
+Tested against a real AzuraCast in Docker (rolling release after 0.23.9,
+October 2026), with generated test tones in a playlist, listeners, and a live
+show streamed by ffmpeg: songs, listeners, a live show and its end, skipping a
+song, the album art. Feedback welcome on
+[the issues](https://github.com/guim31/gladys-azuracast/issues).
 
-## Configuration
+## What you need
 
-1. Open the **Configuration** tab of the integration.
-2. Set the **latitude** and **longitude** the demo weather station should
-   observe (they default to Paris), and pick your temperature unit.
-   The **refresh interval** sets how often the weather station and the
-   plug's power are read: every 5 minutes by default, every minute at most.
-3. Save: the devices appear in the **Discovery** tab, ready to be added.
+- Gladys Assistant 5.1.0 or later.
+- An AzuraCast server reachable from Gladys (its web interface, port 80 or 443
+  by default).
+- The public API enabled on each station (Edit Station Profile → Profile →
+  "Enable public API", on by default).
+- Optional: an AzuraCast API key, to skip songs from Gladys.
 
-The **Prefer the local connection** toggle drives the demo plug: it reports
-the channel it actually uses as a badge (local or cloud), with an orange dot
-when it runs degraded (local refused, cloud fallback).
+## Getting started
 
-## Actions
+### 1. Find the address of AzuraCast
 
-- **Test the weather provider** — performs a live request to Open-Meteo and
-  shows the current temperature and humidity under the button.
-- **Identify a device** — pick one of your devices in the list and it will
-  signal itself (the demo light "blinks" in the logs).
+It is the address of its web interface, for example `http://192.168.1.2` or
+`https://radio.example.org`. A URL copied from the browser works too (a public
+player `…/public/my_station`, the dashboard): the integration keeps the start
+of it.
 
-## Scenes
+### 2. Configure the integration
 
-The integration adds its own cards to the scene editor (Gladys 5.1 or
-later), under the **Integrations** category:
+In Gladys, open the integration and fill in:
 
-- **Motion detected** (trigger) — starts the scene when a demo motion sensor
-  sees something move. Optionally pick the sensor and what moved (person,
-  animal); left empty, any detection matches. The following actions can
-  read what moved with `{{triggerEvent.data.target}}`.
-- **Identify a device** (action) — makes the chosen device signal itself.
-  It returns whether the device could signal itself, so the following
-  actions can depend on it.
+- **AzuraCast address**.
+- **API key (optional)**: in AzuraCast, open My Account → API Keys, create a
+  key and paste it here. The user must be allowed to manage the station (the
+  "Broadcasting" permission). Only for the **Next song** button and the action
+  "Skip to the next song".
+- **Refresh interval**: 15 seconds by default. One light request for all the
+  stations each time.
+- **Language of the names**: the language of the feature names and of the
+  scene results.
+
+Then use **Test the connection**: it reads AzuraCast, lists what each station
+plays, and checks the API key.
+
+### 3. Add the devices
+
+Open the **Discover** tab: each public station is a device, named after it.
+Add the ones you want.
+
+## The devices
+
+| Feature              | What it says                                                   |
+| -------------------- | -------------------------------------------------------------- |
+| On air               | Yes while the station broadcasts                               |
+| Listeners            | People listening right now                                     |
+| Peak listeners today | The most listeners since midnight                              |
+| Now playing          | "Artist – Title" of the song on air ("—" off air)              |
+| Live                 | Yes while a streamer is live, no with the AutoDJ               |
+| Streamer             | The name of the streamer on air ("—" with the AutoDJ)          |
+| Next track           | The next song of the AutoDJ ("—" when AzuraCast does not know) |
+
+A station goes off air after one minute without broadcasting (or without
+answer from AzuraCast), and a live show ends after one minute without
+streamer: a short cut changes nothing.
 
 ## Dashboard
 
-Add the **Demo status** widget to a dashboard: it shows the live
-temperature of the weather station and the power of the office plug, the
-connection the plug currently uses (orange when degraded) and the observed
-location. Its **Identify the light** button makes the demo light signal
-itself.
+The **AzuraCast now playing** widget shows the title and the artist of the
+song with its album art, the listeners and the peak of the day, whether the
+station is on air, the streamer when live, and the next song. Choose the
+station in the settings of the widget (the first station when empty). The
+**Next song** button (with the API key, after a confirmation) skips the song;
+the **Listen** button opens the public page of the station when its address is
+https://.
+
+## Scenes
+
+### Triggers
+
+Each trigger can be limited to one station (empty: any station), and gives the
+station name.
+
+- **A new song plays**: with the song, the artist, the title and the album.
+  Also fires for a song played twice in a row.
+- **A live show starts**: with the name of the streamer.
+- **A live show ends**: with the name of the streamer and the duration in
+  minutes.
+- **Listeners reach a threshold**: choose 1, 5, 10, 25, 50, 100, 250, 500 or
+  1000; fires once a day when the listeners reach it. 1 means "someone is
+  listening".
+- **A station goes off air**: the station (or the whole AzuraCast) has stopped
+  broadcasting for a minute.
+
+The integration keeps what it saw: a restart of Gladys does not announce a
+live show or a threshold twice, and a song that started meanwhile is
+announced once.
+
+### Actions
+
+- **Now playing**: reads a station for the next actions: on air or not, live
+  or not, song, artist, title, album, streamer, next song, listeners, and a
+  ready-made sentence ("My Radio: On air, live with DJ Max, Artist – Title, 12
+  listener(s)").
+- **Skip to the next song**: skips the song of the AutoDJ. Needs the API key
+  of the configuration.
+
+### Scene ideas
+
+- **On air light**: "A live show starts" turns the lamp of the studio red; "A
+  live show ends" turns it off and sends you the duration.
+- **Song on the TV**: "A new song plays" shows the song text on the screen of
+  the living room, or says it with the speaker.
+- **Off air alert**: "A station goes off air" sends you a notification; a
+  morning scene skips a song if you do not like what plays.
 
 ## Troubleshooting
 
-The integration logs everything it does: check the integration logs from the
-Gladys UI (or `docker logs` on the host) with `LOG_LEVEL=debug` for the full
-detail.
+- **AzuraCast does not answer**: check the address from the machine running
+  Gladys.
+- **No AzuraCast at this address**: the address points to another service.
+- **The address redirects**: enter the https:// address.
+- **AzuraCast answers, but shows no public station**: tick "Enable public API"
+  in the profile of the station.
+- **API key refused, or without the rights on this station**: create the key
+  again with a user who manages the station.
+- **No album art in the widget**: the song has none in AzuraCast, or its file
+  is above 300 KB (the limit of Gladys).
+
+## Limits
+
+- One AzuraCast server per integration; stations without public API are not
+  seen.
+- AzuraCast is read at the interval chosen (15 seconds by default), not in real
+  time: a song shorter than the interval may be missed.
+- Skipping only works with the AutoDJ of AzuraCast (Liquidsoap), not during a
+  live show.
+- The peak of the day is measured by the integration at each reading.
+- Not affiliated with the AzuraCast project.

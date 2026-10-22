@@ -1,41 +1,34 @@
 // -----------------------------------------------------------------------------
-// Scene actions (SDK v0.14+, Gladys 5.1+).
+// Scene action handlers (manifest `scene_actions`, Gladys 5.1+).
 //
-// A scene action is an OPERATION a scene author places in a scene, with
-// parameters and a result: "identify this device", "take a snapshot", "clean
-// these rooms". Each one is declared in the manifest `scene_actions` field
-// (key, label, `fields` in the config_schema grammar, scalar `outputs`) and
-// handled here, keyed by that same `key`; index.js registers every entry with
-// `gladys.onSceneAction(key, ...)`.
-//
-// Scene TRIGGERS are the other direction ("this happened"): they are fired by
-// the device that observes the event, see src/devices/motionSensor.js.
-//
-// The rules that matter:
-//   - `fields` arrive RESOLVED: scene variables substituted, defaults applied,
-//     validated by the core; a `"source": "devices"` field is the chosen
-//     device external_id;
-//   - resolve an object of the declared `outputs` (scalars only), readable by
-//     the following actions of the scene, or `undefined` for none. Keys not
-//     declared in the manifest are dropped by the core;
-//   - throwing fails THIS action only: the scene logs it and continues. A
-//     scene action is never a condition: return an output and let the scene
-//     author gate on it;
-//   - never fire a scene event as a consequence of a received action: a scene
-//     bound to that event would loop through the integration.
+// "Is the station on air?" is already a scene condition on the device
+// feature. The actions are about what a condition cannot do: put what plays
+// in a message or a spoken sentence ("AzuraTest Radio: On air, Artist – Title,
+// 3 listener(s)"), and skip to the next song (an AzuraCast API key in the
+// configuration). Both take the station device chosen in the scene.
 // -----------------------------------------------------------------------------
 
-import { createLogger } from '@gladysassistant/integration-sdk';
-import { signalDevice } from './devices/index.js';
-
-const logger = createLogger({ name: 'scenes' });
+import { songText } from './azuracast/client.js';
 
 export const SCENE_ACTIONS = {
-  // The ack is awaited under the action's `timeout_seconds` (15 s in the
-  // manifest), counted from the moment the scene reaches the action.
-  async identify_device(gladys, { fields, config }) {
-    logger.info(`Scene action identify_device <- ${fields.device}`);
-    const signalled = await signalDevice(gladys, fields.device, config);
-    return { signalled };
+  async get_now_playing(hub, { fields = {} }) {
+    const view = await hub.commandStation(fields.station);
+    return {
+      online: view.online,
+      live: view.live,
+      text: songText(view.song),
+      artist: view.song?.artist ?? '',
+      title: view.song?.title ?? '',
+      album: view.song?.album ?? '',
+      streamer: view.streamer,
+      next: songText(view.next),
+      listeners: view.listeners,
+      sentence: hub.sentence(view, hub.config.language),
+    };
+  },
+
+  async skip_song(hub, { fields = {} }) {
+    await hub.skip(fields.station);
+    hub.schedulePoll(3_000);
   },
 };

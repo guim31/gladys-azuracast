@@ -1,177 +1,824 @@
 {
   "manifest_version": 1,
   "type": "device",
-  "name": "Demo Devices Template",
+  "name": "AzuraCast",
   "description": {
-    "en": "Starter template showing sensors, a switch, a dimmable light and a smart plug.",
-    "fr": "Template de démarrage : capteurs, interrupteur, lampe variable et prise connectée."
+    "en": "Your AzuraCast web radio in Gladys: song, listeners, live shows, and scenes on every change.",
+    "fr": "Votre webradio AzuraCast dans Gladys : titre, auditeurs, directs, et des scènes à chaque changement.",
+    "de": "Dein AzuraCast-Webradio in Gladys: Titel, Zuhörer, Live-Sendungen und Szenen bei jeder Änderung.",
+    "es": "Su radio web AzuraCast en Gladys: canción, oyentes, directos y escenas en cada cambio."
   },
   "version": "1.0.0",
-  "docker_image": "ghcr.io/gladysassistant/integration-template-js:1.0.0",
+  "docker_image": "ghcr.io/guim31/gladys-azuracast:1.0.0",
   "gladys_version": ">=5.1.0",
-  "cover_image": "https://raw.githubusercontent.com/GladysAssistant/integration-template-js/master/cover.png",
-  "categories": ["lighting", "security", "environment"],
+  "cover_image": "https://raw.githubusercontent.com/guim31/gladys-azuracast/main/cover.png",
+  "categories": ["multimedia"],
   "transports": ["local", "cloud"],
   "config_schema": [
     {
       "key": "intro",
       "type": "section",
-      "label": { "en": "Getting started", "fr": "Pour commencer" },
+      "label": {
+        "en": "Your AzuraCast",
+        "fr": "Votre AzuraCast",
+        "de": "Dein AzuraCast",
+        "es": "Su AzuraCast"
+      },
       "description": {
-        "en": "The demo weather station reads real data from the free Open-Meteo API: pick the coordinates to observe. No account, no API key.",
-        "fr": "La station météo de démonstration lit de vraies données via l'API gratuite Open-Meteo : choisissez les coordonnées à observer. Pas de compte, pas de clé d'API."
+        "en": "Enter the address of your AzuraCast. Its stations appear in the Discover tab: add the ones you want. The API key is optional (Next song button and action).",
+        "fr": "Saisissez l'adresse de votre AzuraCast. Ses stations apparaissent dans l'onglet Découverte : ajoutez celles que vous voulez. La clé d'API est facultative (bouton et action « Titre suivant »).",
+        "de": "Gib die Adresse deines AzuraCast ein. Seine Sender erscheinen im Tab „Entdecken“: Füge die gewünschten hinzu. Der API-Schlüssel ist optional (Schaltfläche und Aktion „Nächster Titel“).",
+        "es": "Introduzca la dirección de su AzuraCast. Sus emisoras aparecen en la pestaña Descubrir: añada las que desee. La clave de API es opcional (botón y acción «Siguiente canción»)."
       },
       "links": [
         {
-          "url": "https://open-meteo.com/en/docs",
-          "label": { "en": "Open-Meteo documentation", "fr": "Documentation Open-Meteo" }
+          "url": "https://github.com/guim31/gladys-azuracast/blob/main/docs/en.md",
+          "label": {
+            "en": "Setup guide",
+            "fr": "Guide d'installation",
+            "de": "Einrichtungsanleitung",
+            "es": "Guía de instalación"
+          }
+        },
+        {
+          "url": "https://www.azuracast.com/docs/developers/apis/",
+          "label": {
+            "en": "AzuraCast API",
+            "fr": "API d'AzuraCast",
+            "de": "AzuraCast-API",
+            "es": "API de AzuraCast"
+          }
         }
       ]
     },
     {
-      "key": "latitude",
-      "type": "number",
-      "label": { "en": "Latitude", "fr": "Latitude" },
-      "description": {
-        "en": "Latitude used for the demo weather sensor.",
-        "fr": "Latitude utilisée par le capteur météo de démonstration."
+      "key": "url",
+      "type": "string",
+      "label": {
+        "en": "AzuraCast address",
+        "fr": "Adresse d'AzuraCast",
+        "de": "AzuraCast-Adresse",
+        "es": "Dirección de AzuraCast"
       },
-      "placeholder": { "en": "e.g. 48.8566", "fr": "ex. 48.8566" },
-      "required": true,
-      "default": 48.8566,
-      "min": -90,
-      "max": 90
+      "description": {
+        "en": "Address of the AzuraCast web interface.",
+        "fr": "Adresse de l'interface web d'AzuraCast.",
+        "de": "Adresse der AzuraCast-Weboberfläche.",
+        "es": "Dirección de la interfaz web de AzuraCast."
+      },
+      "placeholder": {
+        "en": "e.g. http://192.168.1.2",
+        "fr": "ex. http://192.168.1.2",
+        "de": "z. B. http://192.168.1.2",
+        "es": "p. ej. http://192.168.1.2"
+      },
+      "required": true
     },
     {
-      "key": "longitude",
-      "type": "number",
-      "label": { "en": "Longitude", "fr": "Longitude" },
-      "description": {
-        "en": "Longitude used for the demo weather sensor.",
-        "fr": "Longitude utilisée par le capteur météo de démonstration."
+      "key": "api_key",
+      "type": "secret",
+      "label": {
+        "en": "API key (optional)",
+        "fr": "Clé d'API (facultative)",
+        "de": "API-Schlüssel (optional)",
+        "es": "Clave de API (opcional)"
       },
-      "placeholder": { "en": "e.g. 2.3522", "fr": "ex. 2.3522" },
-      "required": true,
-      "default": 2.3522,
-      "min": -180,
-      "max": 180
+      "description": {
+        "en": "To skip to the next song: create it in AzuraCast, My Account → API Keys, with a user allowed to manage the station.",
+        "fr": "Pour passer au titre suivant : créez-la dans AzuraCast, My Account → API Keys, avec un utilisateur autorisé à gérer la station.",
+        "de": "Zum Weiterschalten auf den nächsten Titel: Erstelle ihn in AzuraCast unter My Account → API Keys, mit einem Benutzer, der den Sender verwalten darf.",
+        "es": "Para pasar a la siguiente canción: créela en AzuraCast, My Account → API Keys, con un usuario autorizado a gestionar la emisora."
+      },
+      "required": false
     },
     {
-      "key": "unit",
+      "key": "options",
+      "type": "section",
+      "label": {
+        "en": "Options",
+        "fr": "Options",
+        "de": "Optionen",
+        "es": "Opciones"
+      }
+    },
+    {
+      "key": "poll_interval",
       "type": "select",
-      "label": { "en": "Temperature unit", "fr": "Unité de température" },
+      "label": {
+        "en": "Refresh interval",
+        "fr": "Intervalle de rafraîchissement",
+        "de": "Aktualisierungsintervall",
+        "es": "Intervalo de actualización"
+      },
+      "description": {
+        "en": "How often AzuraCast is read: one light request for all the stations.",
+        "fr": "À quelle fréquence AzuraCast est lu : une requête légère pour toutes les stations.",
+        "de": "Wie oft AzuraCast gelesen wird: eine leichte Anfrage für alle Sender.",
+        "es": "Con qué frecuencia se lee AzuraCast: una petición ligera para todas las emisoras."
+      },
       "required": false,
-      "default": "celsius",
+      "default": "15",
       "options": [
-        { "value": "celsius", "label": { "en": "Celsius", "fr": "Celsius" } },
-        { "value": "fahrenheit", "label": { "en": "Fahrenheit", "fr": "Fahrenheit" } }
+        {
+          "value": "10",
+          "label": {
+            "en": "10 seconds",
+            "fr": "10 secondes",
+            "de": "10 Sekunden",
+            "es": "10 segundos"
+          }
+        },
+        {
+          "value": "15",
+          "label": {
+            "en": "15 seconds",
+            "fr": "15 secondes",
+            "de": "15 Sekunden",
+            "es": "15 segundos"
+          }
+        },
+        {
+          "value": "30",
+          "label": {
+            "en": "30 seconds",
+            "fr": "30 secondes",
+            "de": "30 Sekunden",
+            "es": "30 segundos"
+          }
+        },
+        {
+          "value": "60",
+          "label": {
+            "en": "1 minute",
+            "fr": "1 minute",
+            "de": "1 Minute",
+            "es": "1 minuto"
+          }
+        }
       ]
     },
     {
-      "key": "poll_frequency",
-      "type": "number",
-      "label": { "en": "Refresh interval (s)", "fr": "Intervalle de rafraîchissement (s)" },
+      "key": "language",
+      "type": "select",
+      "label": {
+        "en": "Language of the names",
+        "fr": "Langue des noms",
+        "de": "Sprache der Namen",
+        "es": "Idioma de los nombres"
+      },
       "description": {
-        "en": "How often sensors are polled, in seconds (one minute minimum).",
-        "fr": "Fréquence d'interrogation des capteurs, en secondes (une minute minimum)."
+        "en": "Language of the feature names (set when the device is added) and of the scene results.",
+        "fr": "Langue des noms des fonctionnalités (fixés à l'ajout de l'appareil) et des résultats de scène.",
+        "de": "Sprache der Funktionsnamen (beim Anlegen des Geräts festgelegt) und der Szenen-Ergebnisse.",
+        "es": "Idioma de los nombres de las funciones (fijados al añadir el dispositivo) y de los resultados de escena."
       },
       "required": false,
-      "default": 300,
-      "min": 60,
-      "max": 3600
+      "default": "fr",
+      "options": [
+        {
+          "value": "en",
+          "label": {
+            "en": "English",
+            "fr": "Anglais",
+            "de": "Englisch",
+            "es": "Inglés"
+          }
+        },
+        {
+          "value": "fr",
+          "label": {
+            "en": "French",
+            "fr": "Français",
+            "de": "Französisch",
+            "es": "Francés"
+          }
+        },
+        {
+          "value": "de",
+          "label": {
+            "en": "German",
+            "fr": "Allemand",
+            "de": "Deutsch",
+            "es": "Alemán"
+          }
+        },
+        {
+          "value": "es",
+          "label": {
+            "en": "Spanish",
+            "fr": "Espagnol",
+            "de": "Spanisch",
+            "es": "Español"
+          }
+        }
+      ]
     }
   ],
   "actions": [
     {
-      "key": "test_weather",
-      "label": { "en": "Test the weather provider", "fr": "Tester le fournisseur météo" },
+      "key": "test_connection",
+      "label": {
+        "en": "Test the connection",
+        "fr": "Tester la connexion",
+        "de": "Verbindung testen",
+        "es": "Probar la conexión"
+      },
       "timeout_seconds": 30
-    },
-    {
-      "key": "identify",
-      "label": { "en": "Identify a device", "fr": "Identifier un appareil" },
-      "fields": [
-        {
-          "key": "device",
-          "type": "select",
-          "source": "devices",
-          "label": { "en": "Device", "fr": "Appareil" },
-          "required": true
-        }
-      ]
     }
   ],
   "scene_triggers": [
     {
-      "key": "motion_detected",
-      "label": { "en": "Motion detected", "fr": "Mouvement détecté" },
+      "key": "track_changed",
+      "label": {
+        "en": "A new song plays",
+        "fr": "Un nouveau titre passe",
+        "de": "Ein neuer Titel läuft",
+        "es": "Suena una nueva canción"
+      },
       "description": {
-        "en": "A demo motion sensor saw a person or an animal move.",
-        "fr": "Un détecteur de démonstration a vu bouger une personne ou un animal."
+        "en": "The station plays another song (AutoDJ or live).",
+        "fr": "La station passe un autre titre (AutoDJ ou direct).",
+        "de": "Der Sender spielt einen anderen Titel (AutoDJ oder live).",
+        "es": "La emisora reproduce otra canción (AutoDJ o directo)."
       },
       "fields": [
         {
-          "key": "device",
+          "key": "station",
           "type": "select",
           "source": "devices",
-          "label": { "en": "Sensor", "fr": "Détecteur" }
+          "label": {
+            "en": "Station",
+            "fr": "Station",
+            "de": "Sender",
+            "es": "Emisora"
+          },
+          "required": false
+        }
+      ],
+      "variables": [
+        {
+          "key": "station_name",
+          "type": "string",
+          "label": {
+            "en": "Station name",
+            "fr": "Nom de la station",
+            "de": "Name des Senders",
+            "es": "Nombre de la emisora"
+          }
         },
         {
-          "key": "target",
-          "type": "multi_select",
-          "label": { "en": "What moved", "fr": "Ce qui a bougé" },
+          "key": "text",
+          "type": "string",
+          "label": {
+            "en": "Song",
+            "fr": "Titre complet",
+            "de": "Titel",
+            "es": "Canción"
+          }
+        },
+        {
+          "key": "artist",
+          "type": "string",
+          "label": {
+            "en": "Artist",
+            "fr": "Artiste",
+            "de": "Interpret",
+            "es": "Artista"
+          }
+        },
+        {
+          "key": "title",
+          "type": "string",
+          "label": {
+            "en": "Title",
+            "fr": "Titre",
+            "de": "Titel des Songs",
+            "es": "Título"
+          }
+        },
+        {
+          "key": "album",
+          "type": "string",
+          "label": {
+            "en": "Album",
+            "fr": "Album",
+            "de": "Album",
+            "es": "Álbum"
+          }
+        }
+      ]
+    },
+    {
+      "key": "live_started",
+      "label": {
+        "en": "A live show starts",
+        "fr": "Une émission en direct commence",
+        "de": "Eine Live-Sendung beginnt",
+        "es": "Empieza un programa en directo"
+      },
+      "description": {
+        "en": "A streamer connects to the station and goes on air.",
+        "fr": "Un animateur se connecte à la station et prend l'antenne.",
+        "de": "Ein Moderator verbindet sich mit dem Sender und geht auf Sendung.",
+        "es": "Un locutor se conecta a la emisora y sale en antena."
+      },
+      "fields": [
+        {
+          "key": "station",
+          "type": "select",
+          "source": "devices",
+          "label": {
+            "en": "Station",
+            "fr": "Station",
+            "de": "Sender",
+            "es": "Emisora"
+          },
+          "required": false
+        }
+      ],
+      "variables": [
+        {
+          "key": "station_name",
+          "type": "string",
+          "label": {
+            "en": "Station name",
+            "fr": "Nom de la station",
+            "de": "Name des Senders",
+            "es": "Nombre de la emisora"
+          }
+        },
+        {
+          "key": "streamer",
+          "type": "string",
+          "label": {
+            "en": "Streamer",
+            "fr": "Animateur",
+            "de": "Moderator",
+            "es": "Locutor"
+          }
+        }
+      ]
+    },
+    {
+      "key": "live_ended",
+      "label": {
+        "en": "A live show ends",
+        "fr": "Une émission en direct se termine",
+        "de": "Eine Live-Sendung endet",
+        "es": "Termina un programa en directo"
+      },
+      "description": {
+        "en": "The streamer has been gone for a minute: the show is over, with its length.",
+        "fr": "L'animateur est parti depuis une minute : l'émission est finie, avec sa durée.",
+        "de": "Der Moderator ist seit einer Minute weg: Die Sendung ist vorbei, mit ihrer Dauer.",
+        "es": "El locutor se fue hace un minuto: el programa ha terminado, con su duración."
+      },
+      "fields": [
+        {
+          "key": "station",
+          "type": "select",
+          "source": "devices",
+          "label": {
+            "en": "Station",
+            "fr": "Station",
+            "de": "Sender",
+            "es": "Emisora"
+          },
+          "required": false
+        }
+      ],
+      "variables": [
+        {
+          "key": "station_name",
+          "type": "string",
+          "label": {
+            "en": "Station name",
+            "fr": "Nom de la station",
+            "de": "Name des Senders",
+            "es": "Nombre de la emisora"
+          }
+        },
+        {
+          "key": "streamer",
+          "type": "string",
+          "label": {
+            "en": "Streamer",
+            "fr": "Animateur",
+            "de": "Moderator",
+            "es": "Locutor"
+          }
+        },
+        {
+          "key": "duration_minutes",
+          "type": "number",
+          "label": {
+            "en": "Duration (minutes)",
+            "fr": "Durée (minutes)",
+            "de": "Dauer (Minuten)",
+            "es": "Duración (minutos)"
+          }
+        }
+      ]
+    },
+    {
+      "key": "listeners_reached",
+      "label": {
+        "en": "Listeners reach a threshold",
+        "fr": "Les auditeurs atteignent un seuil",
+        "de": "Zuhörer erreichen eine Schwelle",
+        "es": "Los oyentes alcanzan un umbral"
+      },
+      "description": {
+        "en": "The number of listeners reaches the chosen threshold, once a day.",
+        "fr": "Le nombre d'auditeurs atteint le seuil choisi, une fois par jour.",
+        "de": "Die Zuhörerzahl erreicht die gewählte Schwelle, einmal pro Tag.",
+        "es": "El número de oyentes alcanza el umbral elegido, una vez al día."
+      },
+      "fields": [
+        {
+          "key": "station",
+          "type": "select",
+          "source": "devices",
+          "label": {
+            "en": "Station",
+            "fr": "Station",
+            "de": "Sender",
+            "es": "Emisora"
+          },
+          "required": false
+        },
+        {
+          "key": "threshold",
+          "type": "select",
+          "label": {
+            "en": "Threshold",
+            "fr": "Seuil",
+            "de": "Schwelle",
+            "es": "Umbral"
+          },
+          "required": true,
+          "default": "10",
           "options": [
-            { "value": "person", "label": { "en": "Person", "fr": "Personne" } },
-            { "value": "animal", "label": { "en": "Animal", "fr": "Animal" } }
+            {
+              "value": "1",
+              "label": {
+                "en": "1",
+                "fr": "1",
+                "de": "1",
+                "es": "1"
+              }
+            },
+            {
+              "value": "5",
+              "label": {
+                "en": "5",
+                "fr": "5",
+                "de": "5",
+                "es": "5"
+              }
+            },
+            {
+              "value": "10",
+              "label": {
+                "en": "10",
+                "fr": "10",
+                "de": "10",
+                "es": "10"
+              }
+            },
+            {
+              "value": "25",
+              "label": {
+                "en": "25",
+                "fr": "25",
+                "de": "25",
+                "es": "25"
+              }
+            },
+            {
+              "value": "50",
+              "label": {
+                "en": "50",
+                "fr": "50",
+                "de": "50",
+                "es": "50"
+              }
+            },
+            {
+              "value": "100",
+              "label": {
+                "en": "100",
+                "fr": "100",
+                "de": "100",
+                "es": "100"
+              }
+            },
+            {
+              "value": "250",
+              "label": {
+                "en": "250",
+                "fr": "250",
+                "de": "250",
+                "es": "250"
+              }
+            },
+            {
+              "value": "500",
+              "label": {
+                "en": "500",
+                "fr": "500",
+                "de": "500",
+                "es": "500"
+              }
+            },
+            {
+              "value": "1000",
+              "label": {
+                "en": "1000",
+                "fr": "1000",
+                "de": "1000",
+                "es": "1000"
+              }
+            }
           ]
         }
       ],
       "variables": [
         {
-          "key": "target",
+          "key": "station_name",
           "type": "string",
-          "label": { "en": "What moved", "fr": "Ce qui a bougé" }
+          "label": {
+            "en": "Station name",
+            "fr": "Nom de la station",
+            "de": "Name des Senders",
+            "es": "Nombre de la emisora"
+          }
+        },
+        {
+          "key": "threshold",
+          "type": "number",
+          "label": {
+            "en": "Threshold",
+            "fr": "Seuil",
+            "de": "Schwelle",
+            "es": "Umbral"
+          }
+        },
+        {
+          "key": "listeners",
+          "type": "number",
+          "label": {
+            "en": "Listeners",
+            "fr": "Auditeurs",
+            "de": "Zuhörer",
+            "es": "Oyentes"
+          }
+        }
+      ]
+    },
+    {
+      "key": "station_offline",
+      "label": {
+        "en": "A station goes off air",
+        "fr": "Une station n'émet plus",
+        "de": "Ein Sender ist nicht mehr auf Sendung",
+        "es": "Una emisora deja de emitir"
+      },
+      "description": {
+        "en": "The station (or AzuraCast) has been off air for a minute.",
+        "fr": "La station (ou AzuraCast) n'émet plus depuis une minute.",
+        "de": "Der Sender (oder AzuraCast) ist seit einer Minute nicht auf Sendung.",
+        "es": "La emisora (o AzuraCast) lleva un minuto sin emitir."
+      },
+      "fields": [
+        {
+          "key": "station",
+          "type": "select",
+          "source": "devices",
+          "label": {
+            "en": "Station",
+            "fr": "Station",
+            "de": "Sender",
+            "es": "Emisora"
+          },
+          "required": false
+        }
+      ],
+      "variables": [
+        {
+          "key": "station_name",
+          "type": "string",
+          "label": {
+            "en": "Station name",
+            "fr": "Nom de la station",
+            "de": "Name des Senders",
+            "es": "Nombre de la emisora"
+          }
         }
       ]
     }
   ],
   "scene_actions": [
     {
-      "key": "identify_device",
-      "label": { "en": "Identify a device", "fr": "Identifier un appareil" },
-      "description": {
-        "en": "Make a device signal itself (the demo light blinks).",
-        "fr": "Fait se signaler un appareil (la lampe de démonstration clignote)."
+      "key": "get_now_playing",
+      "label": {
+        "en": "Now playing",
+        "fr": "Titre en cours",
+        "de": "Aktueller Titel",
+        "es": "Canción actual"
       },
-      "timeout_seconds": 15,
+      "description": {
+        "en": "Reads a station for the next actions: song, artist, listeners, live, and a ready-made sentence.",
+        "fr": "Lit une station pour les actions suivantes : titre, artiste, auditeurs, direct, et une phrase toute prête.",
+        "de": "Liest einen Sender für die nächsten Aktionen: Titel, Interpret, Zuhörer, Live und einen fertigen Satz.",
+        "es": "Lee una emisora para las siguientes acciones: canción, artista, oyentes, directo y una frase lista."
+      },
+      "timeout_seconds": 30,
       "fields": [
         {
-          "key": "device",
+          "key": "station",
           "type": "select",
           "source": "devices",
-          "label": { "en": "Device", "fr": "Appareil" },
+          "label": {
+            "en": "Station",
+            "fr": "Station",
+            "de": "Sender",
+            "es": "Emisora"
+          },
           "required": true
         }
       ],
       "outputs": [
         {
-          "key": "signalled",
+          "key": "online",
           "type": "boolean",
-          "label": { "en": "Device signalled", "fr": "Appareil signalé" }
+          "label": {
+            "en": "On air",
+            "fr": "À l'antenne",
+            "de": "Auf Sendung",
+            "es": "En antena"
+          }
+        },
+        {
+          "key": "live",
+          "type": "boolean",
+          "label": {
+            "en": "Live",
+            "fr": "En direct",
+            "de": "Live",
+            "es": "En directo"
+          }
+        },
+        {
+          "key": "text",
+          "type": "string",
+          "label": {
+            "en": "Song",
+            "fr": "Titre complet",
+            "de": "Titel",
+            "es": "Canción"
+          }
+        },
+        {
+          "key": "artist",
+          "type": "string",
+          "label": {
+            "en": "Artist",
+            "fr": "Artiste",
+            "de": "Interpret",
+            "es": "Artista"
+          }
+        },
+        {
+          "key": "title",
+          "type": "string",
+          "label": {
+            "en": "Title",
+            "fr": "Titre",
+            "de": "Titel des Songs",
+            "es": "Título"
+          }
+        },
+        {
+          "key": "album",
+          "type": "string",
+          "label": {
+            "en": "Album",
+            "fr": "Album",
+            "de": "Album",
+            "es": "Álbum"
+          }
+        },
+        {
+          "key": "streamer",
+          "type": "string",
+          "label": {
+            "en": "Streamer",
+            "fr": "Animateur",
+            "de": "Moderator",
+            "es": "Locutor"
+          }
+        },
+        {
+          "key": "next",
+          "type": "string",
+          "label": {
+            "en": "Next song",
+            "fr": "Titre suivant",
+            "de": "Nächster Titel",
+            "es": "Siguiente canción"
+          }
+        },
+        {
+          "key": "listeners",
+          "type": "number",
+          "label": {
+            "en": "Listeners",
+            "fr": "Auditeurs",
+            "de": "Zuhörer",
+            "es": "Oyentes"
+          }
+        },
+        {
+          "key": "sentence",
+          "type": "string",
+          "label": {
+            "en": "Sentence",
+            "fr": "Phrase",
+            "de": "Satz",
+            "es": "Frase"
+          }
+        }
+      ]
+    },
+    {
+      "key": "skip_song",
+      "label": {
+        "en": "Skip to the next song",
+        "fr": "Passer au titre suivant",
+        "de": "Zum nächsten Titel springen",
+        "es": "Pasar a la siguiente canción"
+      },
+      "description": {
+        "en": "Skips the song of the AutoDJ (needs the API key of the configuration).",
+        "fr": "Passe le titre de l'AutoDJ (demande la clé d'API de la configuration).",
+        "de": "Überspringt den Titel des AutoDJ (braucht den API-Schlüssel aus der Konfiguration).",
+        "es": "Salta la canción del AutoDJ (requiere la clave de API de la configuración)."
+      },
+      "timeout_seconds": 30,
+      "fields": [
+        {
+          "key": "station",
+          "type": "select",
+          "source": "devices",
+          "label": {
+            "en": "Station",
+            "fr": "Station",
+            "de": "Sender",
+            "es": "Emisora"
+          },
+          "required": true
         }
       ]
     }
   ],
   "widgets": [
     {
-      "key": "demo_status",
-      "label": { "en": "Demo status", "fr": "État de la démo" },
-      "description": {
-        "en": "Live temperature and plug power, plug connection and observed location.",
-        "fr": "Température et puissance en direct, connexion de la prise, position observée."
+      "key": "now_playing",
+      "label": {
+        "en": "AzuraCast now playing",
+        "fr": "AzuraCast en cours",
+        "de": "AzuraCast läuft gerade",
+        "es": "AzuraCast ahora"
       },
-      "icon": "activity",
-      "action_timeout_seconds": 15
+      "description": {
+        "en": "The song with its album art, listeners, live show and next song.",
+        "fr": "Le titre avec sa pochette, les auditeurs, le direct et le titre suivant.",
+        "de": "Der Titel mit Cover, Zuhörer, Live-Sendung und nächster Titel.",
+        "es": "La canción con su carátula, oyentes, directo y siguiente canción."
+      },
+      "icon": "radio",
+      "action_timeout_seconds": 30,
+      "settings": [
+        {
+          "key": "station",
+          "type": "select",
+          "source": "devices",
+          "label": {
+            "en": "Station",
+            "fr": "Station",
+            "de": "Sender",
+            "es": "Emisora"
+          },
+          "required": false,
+          "description": {
+            "en": "Empty: the first station.",
+            "fr": "Vide : la première station.",
+            "de": "Leer: der erste Sender.",
+            "es": "Vacío: la primera emisora."
+          }
+        }
+      ]
     }
   ]
 }
