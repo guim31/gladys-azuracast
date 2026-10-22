@@ -10,6 +10,8 @@ the notes of the version's GitHub Release.
 
 ## [Unreleased]
 
+## [1.0.0] - 2026-10-22
+
 ### Added
 
 - Each public station of an AzuraCast server as a Gladys device: on air,
@@ -26,3 +28,6 @@ the notes of the version's GitHub Release.
   button for an https:// station page.
 - A "Test the connection" action, texts in English, French, German and
   Spanish.
+
+[Unreleased]: https://github.com/guim31/gladys-azuracast/compare/v1.0.0...HEAD
+[1.0.0]: https://github.com/guim31/gladys-azuracast/releases/tag/v1.0.0
