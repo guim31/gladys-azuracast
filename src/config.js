@@ -24,7 +24,7 @@ export const DEFAULT_CONFIG = {
 // one of them (a public player, the dashboard, a station page), the API lives
 // at the root.
 const INTERFACE_PATH =
-  /\/(public|dashboard|admin|station|stations|profile|login|api|listen|radio)(\/.*)?$/i;
+  /\/(public|dashboard|admin|station|stations|profile|login|api|listen)(\/.*)?$/i;
 
 /**
  * Parse the address typed by the user into a base URL: a bare host or IP
@@ -114,7 +114,8 @@ export function normalizeConfig(raw = {}) {
     // Empty: not configured yet; null: typed but not understood.
     url: typed ? parseServerUrl(typed) : '',
     // A pasted key often carries a trailing space or new line.
-    apiKey: text('api_key'),
+    // A pasted key may carry spaces or line breaks: never valid in a key.
+    apiKey: text('api_key').replace(/\s+/g, ''),
     pollIntervalMs: Number(choice('poll_interval', POLL_INTERVALS)) * 1000,
     language: LANGUAGES.includes(source.language) ? source.language : DEFAULT_CONFIG.language,
   };

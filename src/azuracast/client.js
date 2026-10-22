@@ -229,7 +229,10 @@ export class AzuraCastClient {
       if (TLS_CODES.has(code)) {
         throw new AzuraCastError(ERROR_KINDS.TLS, `Certificate refused (${code})`);
       }
-      throw new AzuraCastError(ERROR_KINDS.UNREACHABLE, code ?? err.message ?? err.name);
+      // Never the message of a non-network error: it can quote the request
+      // headers, the API key included.
+      const reason = code ?? (/too large/i.test(err.message) ? 'Response too large' : err.name);
+      throw new AzuraCastError(ERROR_KINDS.UNREACHABLE, reason || 'Request failed');
     }
   }
 

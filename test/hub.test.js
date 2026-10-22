@@ -266,13 +266,40 @@ test('AzuraCast silent: unreachable badge, off air after the grace, back again',
 test('an empty list (a station restarting) keeps the Discovery list', async (t) => {
   const world = await addedWorld(t);
   const stations = world.azuracast.stations;
+  const transports = world.fake.transports.length;
   world.azuracast.stations = [];
   await world.hub.pollNow();
   assert.equal(world.fake.discoveredDevices.length, 1);
+  assert.equal(world.fake.connectionStatus.connected, true, 'within the grace');
+  assert.equal(world.fake.transports.length, transports, 'the badge stays');
   assert.equal(state(world, FEATURE_KEYS.ONLINE), 1, 'within the grace');
   world.azuracast.stations = stations;
   await world.hub.pollNow();
   assert.equal(events(world, TRIGGERS.OFFLINE).length, 0);
+});
+
+test('a failed reading at midnight announces no threshold again', async (t) => {
+  const world = await addedWorld(t);
+  world.azuracast.station.listeners = 30;
+  await world.hub.pollNow();
+  assert.equal(events(world, TRIGGERS.LISTENERS).length, 4);
+  world.azuracast.failure = 'down';
+  world.clock.advance(6 * 60 * MINUTE + 30_000); // past midnight
+  await world.hub.pollNow();
+  world.azuracast.failure = null;
+  await world.hub.pollNow();
+  assert.equal(events(world, TRIGGERS.LISTENERS).length, 4);
+  assert.equal(state(world, FEATURE_KEYS.LISTENERS_PEAK), 30);
+});
+
+test('a mistyped address keeps what was saved about the server', async (t) => {
+  const world = await addedWorld(t);
+  world.azuracast.station.listeners = 30;
+  await world.hub.pollNow();
+  world.azuracast.station.listeners = 2;
+  await world.fake.configUpdated({ url: 'ftp://typo', language: 'en' });
+  await world.fake.configUpdated({ url: BASE, language: 'en' });
+  assert.equal(state(world, FEATURE_KEYS.LISTENERS_PEAK), 30);
 });
 
 test('a restart of the integration fires nothing twice, and misses nothing', async (t) => {
@@ -376,7 +403,6 @@ test('scene action "Skip to the next song": the key, the station', async (t) => 
 
 test('the widget: song, album art, listeners, status, buttons, in the budget', async (t) => {
   const world = await addedWorld(t, { config: { url: BASE, language: 'fr', api_key: API_KEY } });
-  world.azuracast.goLive('DJ Gladys');
   world.azuracast.station.https = true;
   world.azuracast.station.listeners = 4;
   await world.hub.pollNow();
@@ -402,7 +428,6 @@ test('the widget: song, album art, listeners, status, buttons, in the budget', a
     content.components[5].items.map((item) => [item.label, item.value]),
     [
       ['Radio Gladys', "À l'antenne"],
-      ['En direct', 'DJ Gladys'],
       ['Ensuite', 'Artist 2 – Title 2'],
     ],
   );
@@ -426,6 +451,31 @@ test('the widget: song, album art, listeners, status, buttons, in the budget', a
   );
   assert.equal(action.success, true, action.error);
   assert.deepEqual(world.azuracast.skips, [1]);
+
+  // Live: the streamer, and no Next song button (the AutoDJ is not playing).
+  world.azuracast.goLive('DJ Gladys');
+  await world.hub.pollNow();
+  const live = await world.fake.widgetGet(WIDGET_KEY, { settings: {}, language: 'fr' });
+  const liveContent = live.data.content ?? live.data;
+  assert.deepEqual(validateWidgetContent(liveContent), []);
+  const status = liveContent.components.find((c) => c.type === 'status');
+  assert.deepEqual(status.items[1], {
+    label: 'En direct',
+    value: 'DJ Gladys',
+    icon: 'mic',
+    color: 'danger',
+  });
+  assert.ok(!liveContent.components.some((c) => c.action?.key === 'skip'));
+});
+
+test('a song without art is not asked again at every display', async (t) => {
+  const world = await addedWorld(t);
+  world.azuracast.play(4);
+  await world.hub.pollNow();
+  const arts = () => world.azuracast.requests.filter((r) => r.path.includes('/art/')).length;
+  await world.fake.widgetGet(WIDGET_KEY, { settings: {}, language: 'en' });
+  await world.fake.widgetGet(WIDGET_KEY, { settings: {}, language: 'fr' });
+  assert.equal(arts(), 1);
 });
 
 test('the widget: no art for a song without one, one station chosen, errors', async (t) => {

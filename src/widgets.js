@@ -134,7 +134,8 @@ async function get(hub, { settings = {}, language = 'en' } = {}) {
     });
   }
   components.push({ type: 'status', items: rows });
-  if (hub.config.apiKey && view.online) {
+  // Skipping is for the AutoDJ of a station on air, never during a live show.
+  if (hub.config.apiKey && view.fresh && view.online && !view.live) {
     components.push({
       type: 'button',
       label: pick(TEXT.skip, language),

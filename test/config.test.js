@@ -17,6 +17,7 @@ test('the address: bare host, port, https, a copied page, a sub-path', () => {
   assert.equal(parseServerUrl('http://192.0.2.10/dashboard'), 'http://192.0.2.10');
   assert.equal(parseServerUrl('http://192.0.2.10/station/3/profile'), 'http://192.0.2.10');
   assert.equal(parseServerUrl('https://example.org/azuracast/'), 'https://example.org/azuracast');
+  assert.equal(parseServerUrl('https://example.org/radio'), 'https://example.org/radio');
   assert.equal(parseServerUrl('ftp://example.org'), null);
   assert.equal(parseServerUrl('http://admin:pw@example.org'), null, 'no credentials in the URL');
   assert.equal(parseServerUrl('http://'), null);
@@ -48,7 +49,7 @@ test('normalization: defaults, trimmed key, unknown choices', () => {
   });
   const config = normalizeConfig({
     url: 'nope://',
-    api_key: ' key\n',
+    api_key: ' ke\r\ny\n',
     poll_interval: '7',
     language: 'it',
   });

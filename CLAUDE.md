@@ -232,7 +232,8 @@ code de ce dépôt. Compléter ce fichier quand un nouveau piège est découvert
   aucun redimensionnement : pas de dépendance d'image). Clé d'image `art-<sha1 de l'URL>`.
 - **Seuil d'auditeurs** : un événement par palier franchi (`LISTENER_MILESTONES`), une fois par
   jour local (TZ du superviseur) ; à minuit les paliers déjà atteints sont marqués sans
-  événement. Le pic du jour suit la même journée.
+  événement. Le pic du jour suit la même journée. Le passage au jour suivant n'a lieu que sur une
+  lecture réussie de la station (sinon une panne à minuit réannonce tous les paliers).
 - **Identifiant de l'appareil** : `station:<id>` (l'id numérique d'AzuraCast, stable ; le
   `shortcode` est modifiable et ne va que dans les `params`). Changer d'adresse vide l'état
   sauvegardé (un autre serveur).

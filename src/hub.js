@@ -65,6 +65,8 @@ export const HUB_TIMINGS = {
 const MINUTE = 60_000;
 // Album arts kept in memory for the widget (at most 300 KB each).
 const ART_CACHE_SIZE = 8;
+// A missing album art is asked again after this long.
+const ART_RETRY_MS = 10 * MINUTE;
 
 const emptySaved = () => ({ known: false, stations: {} });
 
@@ -119,6 +121,7 @@ export class AzuraCastHub {
     this.saved = emptySaved();
     this.arts = new Map(); // image key → art URL
     this.artImages = new Map(); // image key → base64, the last few
+    this.artFailures = new Map(); // image key → time of the failure
     this.pollTimer = null;
     this.stopped = false;
     // What fails again at every cycle (Gladys refusing, the reading loop):
@@ -151,7 +154,7 @@ export class AzuraCastHub {
     this.config = config;
     const signature = JSON.stringify([config.url, config.apiKey]);
     if (signature !== this.signature) {
-      if (previousUrl !== null && previousUrl !== config.url) {
+      if (previousUrl && config.url && previousUrl !== config.url) {
         // Another server: what was saved about the previous one means nothing.
         this.saved = emptySaved();
         this.store.save(this.saved);
@@ -167,6 +170,7 @@ export class AzuraCastHub {
       this.transports.clear();
       this.arts.clear();
       this.artImages.clear();
+      this.artFailures.clear();
     }
     // A new language: new names for Discovery.
     this.discovered = null;
@@ -193,15 +197,19 @@ export class AzuraCastHub {
     if (!this.timersEnabled || this.stopped || !this.client) {
       return;
     }
-    this.pollTimer = setTimeout(async () => {
+    const timer = setTimeout(async () => {
       try {
         await this.pollNow();
         this.problems.recover('poll', 'Reading AzuraCast works again');
       } catch (err) {
         this.problems.fail('poll', `Poll failed: ${err.message}`, 'error');
       }
-      this.schedulePoll();
+      // A sooner read asked meanwhile (after a skip) keeps its timer.
+      if (this.pollTimer === timer) {
+        this.schedulePoll();
+      }
     }, delayMs);
+    this.pollTimer = timer;
   }
 
   // --- Reading AzuraCast -----------------------------------------------------
@@ -371,9 +379,11 @@ export class AzuraCastHub {
     }
 
     // The listeners of the day.
-    if (saved.day !== day) {
+    // Only on a reading of the station: a failed reading at midnight would
+    // forget the thresholds already reached and announce them again.
+    if (saved.day !== day && station) {
       saved.day = day;
-      saved.peak = station?.listeners ?? 0;
+      saved.peak = station.listeners;
       // Already reached at midnight: nothing to announce.
       saved.milestones = LISTENER_MILESTONES.filter((m) => saved.peak >= m);
       dirty = true;
@@ -417,7 +427,8 @@ export class AzuraCastHub {
     if (station) {
       const live = station.online && station.live;
       if (live) {
-        if (saved.liveEndingSince !== undefined) {
+        const endingSince = saved.liveEndingSince;
+        if (endingSince !== undefined) {
           // Back before the end was confirmed: the same live goes on.
           delete saved.liveEndingSince;
           dirty = true;
@@ -429,7 +440,7 @@ export class AzuraCastHub {
           station.streamer !== saved.streamer
         ) {
           // Another streamer took over: one live ends, another starts.
-          this.endLive(id, now, events, base());
+          this.endLive(id, endingSince ?? now, events, base());
         }
         if (!saved.live) {
           saved.live = true;
@@ -554,11 +565,21 @@ export class AzuraCastHub {
       return null;
     }
     const key = this.artKey(song.art);
+    // A song without art (a 302 to the generic picture) is not asked again
+    // at every display of the widget.
+    if (this.now() - (this.artFailures.get(key) ?? -Infinity) < ART_RETRY_MS) {
+      return null;
+    }
     try {
       await this.artImage(key);
+      this.artFailures.delete(key);
       return key;
     } catch (err) {
       logger.debug(`Album art not shown: ${err.message}`);
+      this.artFailures.set(key, this.now());
+      while (this.artFailures.size > 50) {
+        this.artFailures.delete(this.artFailures.keys().next().value);
+      }
       return null;
     }
   }
@@ -684,7 +705,9 @@ export class AzuraCastHub {
       if (!this.isCreated(externalId)) {
         continue;
       }
-      const transport = view.fresh ? reachable : DEVICE_TRANSPORTS.UNREACHABLE;
+      // Missing from a list AzuraCast is rebuilding: unchanged within the grace.
+      const transport =
+        view.fresh || (!this.error && view.online) ? reachable : DEVICE_TRANSPORTS.UNREACHABLE;
       if (this.transports.get(externalId) !== transport) {
         changes.push({ external_id: externalId, transport });
       }
@@ -714,7 +737,9 @@ export class AzuraCastHub {
     if (this.error) {
       return { connected: false, message: ERROR_TEXT[this.error.kind] };
     }
-    if (this.readAt !== 0 && this.stations.size === 0) {
+    // An empty list (a station restarting) is only reported after the grace.
+    const onAir = Object.values(this.saved.stations).some((saved) => saved.online);
+    if (this.readAt !== 0 && this.stations.size === 0 && !onAir) {
       return { connected: false, message: CONNECTION_TEXT.noStation };
     }
     return { connected: true };
@@ -773,7 +798,11 @@ export class AzuraCastHub {
     try {
       await this.client.skip(view.id);
     } catch (err) {
-      throw err instanceof AzuraCastError ? new Error(pick(ERROR_TEXT[err.kind], language)) : err;
+      if (!(err instanceof AzuraCastError)) {
+        throw err;
+      }
+      logger.warn(`${view.name}: next song refused: ${err.message}`);
+      throw new Error(pick(ERROR_TEXT[err.kind], language), { cause: err });
     }
     logger.info(`${view.name}: next song requested`);
     return view;
@@ -803,17 +832,20 @@ export class AzuraCastHub {
     let services = null;
     if (status.connected && this.config.apiKey) {
       services = { stopped: false, error: null };
-      for (const id of [...this.stations.keys()].slice(0, 5)) {
-        try {
-          const result = await this.client.stationStatus(id);
-          services.stopped ||= !result.backend || !result.frontend;
-        } catch (err) {
-          if (!(err instanceof AzuraCastError)) {
-            throw err;
+      // In parallel, three stations at most: the action has 30 seconds.
+      const results = await Promise.allSettled(
+        [...this.stations.keys()].slice(0, 3).map((id) => this.client.stationStatus(id)),
+      );
+      for (const result of results) {
+        if (result.status === 'fulfilled') {
+          services.stopped ||= !result.value.backend || !result.value.frontend;
+        } else if (result.reason instanceof AzuraCastError) {
+          if (!services.error) {
+            logger.warn(`Station status: ${result.reason.message}`);
           }
-          services.error = err.kind;
-          logger.warn(`Station status: ${err.message}`);
-          break;
+          services.error ??= result.reason.kind;
+        } else {
+          throw result.reason;
         }
       }
     }

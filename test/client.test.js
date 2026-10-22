@@ -167,3 +167,16 @@ test('the image formats the core accepts', () => {
   assert.equal(imageType(Buffer.from('RIFF\0\0\0\0WEBPVP8 ', 'latin1')), 'webp');
   assert.equal(imageType(Buffer.from('GIF89a........')), null);
 });
+
+test('a non-network error never quotes the request (the API key could be in it)', async () => {
+  const client = new AzuraCastClient({
+    url: 'http://192.0.2.10',
+    apiKey: KEY,
+    request: async () => {
+      throw new TypeError(`Headers.append: "${KEY}" is an invalid header value.`);
+    },
+  });
+  const err = await client.skip(3).catch((error) => error);
+  assert.equal(err.kind, ERROR_KINDS.UNREACHABLE);
+  assert.ok(!err.message.includes(KEY), err.message);
+});
