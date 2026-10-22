@@ -1,8 +1,8 @@
 {
-  "name": "gladys-integration-template-js",
+  "name": "gladys-azuracast",
   "version": "1.0.0",
   "private": true,
-  "description": "Official starter template to build an external integration for Gladys Assistant with the JavaScript SDK.",
+  "description": "AzuraCast web radio in Gladys Assistant: songs, listeners, live shows, scene triggers and actions, a dashboard widget with the album art.",
   "type": "module",
   "main": "index.js",
   "scripts": {

@@ -31,16 +31,20 @@ pushing.
 ## Architecture
 
 ```
-index.js                          SDK wiring only: handlers registered before connect()
-src/devices/index.js              registry of the device blueprints + dispatch helpers
-src/devices/<type>.js             one device type per file (buildDevice, onPoll, onSetValue...)
+index.js                          SDK wiring only: src/app.js registers the handlers before connect()
+src/app.js                        every SDK handler -> the hub (also used by the tests)
+src/hub.js                        reading timer, per-station transitions (grace), milestones -> scene events, views, album art
+src/devices.js                    one device per station: features, names, values
+src/azuracast/client.js           AzuraCast HTTP API (fetch), errors by kind, normalization, album art
 src/scenes.js                     scene action handlers (manifest `scene_actions`)
-src/widgets.js                    dashboard widget handlers (manifest `widgets`)
-src/config.js                     DEFAULT_CONFIG (mirrors the manifest defaults) + normalization
-src/weather.js                    example driver (Open-Meteo)
+src/widgets.js                    dashboard widget `now_playing` (manifest `widgets`)
+src/texts.js                      connection, error, state, report and action texts (4 languages)
+src/config.js                     DEFAULT_CONFIG (mirrors the manifest defaults), address, local/cloud
+src/store.js, src/problems.js     /data/azuracast-state.json; one log line per repeated failure
 gladys-assistant-integration.json manifest: name, config_schema, actions, image...
-docs/en.md, docs/fr.md            user documentation, re-hosted by Gladys (mandatory)
+docs/{en,fr,de,es}.md             user documentation, re-hosted by Gladys (en and fr mandatory)
 test/                             node --test, against the SDK's fake Gladys (integration-sdk/testing)
+                                  and helpers/fakeAzuraCast.js (built on test/fixtures/azuracast)
 .github/scripts/release.mjs       release helpers (manifest bump, changelog), tested in test/
 ```
 
@@ -70,8 +74,10 @@ test/                             node --test, against the SDK's fake Gladys (in
   `type: "provider"`: 5.1.0). `test/manifest.test.js` ties the manifest to the
   code (defaults, action, scene and widget handlers): change both sides
   together.
-- **User-facing text** is bilingual (English and French): action messages,
-  manifest texts, and `docs/en.md` / `docs/fr.md`, kept in sync.
+- **User-facing text** exists in English, French, German and Spanish: action
+  messages, widget content, feature names, scene outputs, manifest texts, and
+  `docs/en.md`, `docs/fr.md`, `docs/de.md`, `docs/es.md`, kept in sync
+  (`test/i18n.test.js` checks the languages and the doc sections).
 - **Style.** Prettier formats, ESLint catches mistakes. Comments explain why,
   in English. Tests never touch the network.
 
@@ -197,6 +203,50 @@ code de ce dépôt. Compléter ce fichier quand un nouveau piège est découvert
 - Les filtres de scène ne font qu'égalité et appartenance : un seuil reste le travail d'un capteur.
 - **Les clés de widgets, de déclencheurs et d'actions sont figées une fois publiées.**
 - `gladys_version` `>=5.1.0` dès qu'il y a widgets, déclencheurs ou actions de scène.
+
+## AzuraCast (propre à ce dépôt)
+
+- **API** (vérifiée sur `ghcr.io/azuracast/azuracast:latest`, version continue après la 0.23.9, le
+  22/10/2026 ; réponses dans `test/fixtures/azuracast`) : `GET /api/nowplaying` public, sans clé,
+  une entrée par station dont **« Enable public API »** est coché (réglage par station, ajouté
+  en 2026, activé par défaut) ; `GET /api/station/<id>/status` et
+  `POST /api/station/<id>/backend/skip` avec `X-API-Key` (403 « You must be logged in » sinon).
+- **`/api/station/<id>/status` répond en camelCase** (`backendRunning`, `frontendRunning`), pas en
+  snake_case comme le dit la doc.
+- **Station hors antenne** : `is_online: false`, et `now_playing` garde un faux morceau
+  « Station Offline » avec `sh_id: 0` : ne jamais le publier ni le prendre pour un nouveau titre
+  (`playKey` ignore une station hors antenne).
+- **`/api/nowplaying` répond `[]` quelques secondes** pendant le redémarrage d'une station (cache
+  reconstruit) : la liste vide ne vide pas la Découverte, et une station absente ne passe hors
+  antenne qu'après la grâce.
+- **Identité d'un titre** : `now_playing.sh_id` (une ligne de l'historique), donc un même morceau
+  joué deux fois déclenche deux fois. Pendant un direct, `now_playing` suit les métadonnées
+  envoyées par l'animateur (le morceau précédent tant qu'il n'en envoie pas).
+- **Direct** : `live.is_live`, `live.streamer_name` (le « display name » de l'animateur),
+  `live.broadcast_start` en secondes Unix. Fin confirmée après 60 s sans animateur (`graceMs`) ;
+  un autre animateur qui prend la main termine un direct et en commence un autre.
+- **Pochette** : `song.art` est daté (`…/art/<id>-<timestamp>.jpg`) quand le morceau en a une ;
+  sans pochette, l'URL non datée répond **302** vers l'image générique d'AzuraCast, non suivie :
+  pas d'image dans le widget. L'image est relue sur l'adresse configurée (AzuraCast écrit son
+  « base URL », parfois injoignable depuis Gladys), sans clé, 300 Ko au plus (limite du cœur,
+  aucun redimensionnement : pas de dépendance d'image). Clé d'image `art-<sha1 de l'URL>`.
+- **Seuil d'auditeurs** : un événement par palier franchi (`LISTENER_MILESTONES`), une fois par
+  jour local (TZ du superviseur) ; à minuit les paliers déjà atteints sont marqués sans
+  événement. Le pic du jour suit la même journée.
+- **Identifiant de l'appareil** : `station:<id>` (l'id numérique d'AzuraCast, stable ; le
+  `shortcode` est modifiable et ne va que dans les `params`). Changer d'adresse vide l'état
+  sauvegardé (un autre serveur).
+- **Temps réel** : le SSE de Centrifugo (`/api/live/nowplaying/sse`) n'est pas utilisé (lecture
+  toutes les 10 à 60 s, une requête pour toutes les stations) : choix de simplicité, à revoir si
+  des retours le demandent.
+- Une session de test complète : réseau `gladys-test-azuracast`, conteneur
+  `ghcr.io/azuracast/azuracast` avec `MYSQL_ROOT_PASSWORD`/`MARIADB_ROOT_PASSWORD`, puis
+  `azuracast_cli azuracast:setup:fixtures` avec `INIT_ADMIN_EMAIL`, `INIT_ADMIN_PASSWORD`,
+  `INIT_ADMIN_API_KEY` (station « AzuraTest Radio »). Morceaux : sinusoïdes ffmpeg avec métadonnées,
+  envoyées par `POST /api/station/<id>/files` (base64), ajoutées à la playlist par
+  `PUT /api/station/<id>/files/batch`, **de plusieurs minutes** (trois morceaux de 40 s vident la
+  file de l'AutoDJ). Direct : `enable_streamers`, un animateur (`POST /api/station/<id>/streamers`),
+  `dj_mount_point` `/live`, puis `ffmpeg … -f mp3 icecast://dj:<mot de passe>@<ip>:8005/live`.
 
 ## Store
 

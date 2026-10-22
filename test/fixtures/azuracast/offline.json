@@ -1,0 +1,114 @@
+[
+  {
+    "station": {
+      "id": 3,
+      "name": "AzuraTest Radio",
+      "shortcode": "azuratest_radio",
+      "description": "A test radio station.",
+      "frontend": "icecast",
+      "backend": "liquidsoap",
+      "timezone": "UTC",
+      "listen_url": "http://192.0.2.10/listen/azuratest_radio/radio.mp3",
+      "url": null,
+      "public_player_url": "http://192.0.2.10/public/azuratest_radio",
+      "playlist_pls_url": "http://192.0.2.10/public/azuratest_radio/playlist.pls",
+      "playlist_m3u_url": "http://192.0.2.10/public/azuratest_radio/playlist.m3u",
+      "is_public": true,
+      "requests_enabled": true,
+      "mounts": [
+        {
+          "id": 3,
+          "name": "/radio.mp3 (128kbps MP3)",
+          "url": "http://192.0.2.10/listen/azuratest_radio/radio.mp3",
+          "bitrate": 128,
+          "format": "mp3",
+          "listeners": {
+            "total": 0,
+            "unique": 0,
+            "current": 0
+          },
+          "path": "/radio.mp3",
+          "is_default": true
+        },
+        {
+          "id": 4,
+          "name": "/mobile.mp3 (64kbps MP3)",
+          "url": "http://192.0.2.10/listen/azuratest_radio/mobile.mp3",
+          "bitrate": 64,
+          "format": "mp3",
+          "listeners": {
+            "total": 0,
+            "unique": 0,
+            "current": 0
+          },
+          "path": "/mobile.mp3",
+          "is_default": false
+        }
+      ],
+      "remotes": [],
+      "hls_enabled": true,
+      "hls_is_default": false,
+      "hls_url": "http://192.0.2.10/hls/azuratest_radio/live.m3u8",
+      "hls_listeners": 0
+    },
+    "listeners": {
+      "total": 0,
+      "unique": 0,
+      "current": 0
+    },
+    "live": {
+      "is_live": false,
+      "streamer_name": "",
+      "broadcast_start": null,
+      "art": null
+    },
+    "now_playing": {
+      "sh_id": 0,
+      "played_at": 0,
+      "duration": 0,
+      "playlist": null,
+      "playlist_chain": null,
+      "playlist_source": null,
+      "streamer": null,
+      "is_request": false,
+      "song": {
+        "id": "5a6a865199cf5df73b1417326d2ff24f",
+        "art": "http://192.0.2.10/static/vite_dist/assets/generic_song-7JSFKOXX.jpg",
+        "custom_fields": [],
+        "text": "Station Offline",
+        "artist": "",
+        "title": "Station Offline",
+        "album": "",
+        "genre": "",
+        "isrc": "",
+        "lyrics": ""
+      },
+      "elapsed": 1792685224,
+      "remaining": 0
+    },
+    "playing_next": {
+      "cued_at": 1792685196,
+      "played_at": 1792685196,
+      "duration": 40.019606259843,
+      "playlist": "default",
+      "playlist_chain": null,
+      "playlist_source": "songs",
+      "is_request": false,
+      "song": {
+        "id": "4ef62c25d9e6d68a19472a8599b7a18f",
+        "art": "http://192.0.2.10/api/station/azuratest_radio/art/20eba2e4ce0358b83400ecd7-1792684963.jpg",
+        "custom_fields": [],
+        "text": "Test Artist 1 - Gladys Test Album - Sine Wave 1",
+        "artist": "Test Artist 1",
+        "title": "Sine Wave 1",
+        "album": "Gladys Test Album",
+        "genre": "",
+        "isrc": "",
+        "lyrics": ""
+      }
+    },
+    "song_history": [],
+    "is_online": false,
+    "cache": null
+  }
+]

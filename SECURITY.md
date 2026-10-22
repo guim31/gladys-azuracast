@@ -30,6 +30,19 @@ Gladys before reporting a problem.
 
 In scope: the code of this repository and the Docker image it publishes.
 
+What the integration stores and sends:
+
+- `/data/azuracast-state.json` holds what the integration saw of each station
+  (on air or not, the play in progress, the live show, the peak of the day and
+  the listener thresholds reached). No secret is written there.
+- The API key lives in the Gladys configuration of the integration. It is sent
+  only to the AzuraCast address configured, on `/api/station/<id>/status` and
+  `/api/station/<id>/backend/skip` — never on the public routes, never
+  logged — and redirects are not followed, so it never reaches another host.
+- The album art is fetched from the configured address, whatever host
+  AzuraCast writes in its URLs, without the key.
+- The container only talks to that AzuraCast server and to Gladys.
+
 Out of scope: Gladys Assistant itself (see its
 [security policy](https://github.com/GladysAssistant/Gladys/security/policy)),
-and the third-party services and devices the integration talks to.
+and the AzuraCast server the integration talks to.
